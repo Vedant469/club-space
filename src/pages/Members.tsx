@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ShieldCheck, ShieldOff, Users } from 'lucide-react'
+import {
+  CheckCircle2,
+  ShieldCheck,
+  ShieldOff,
+  Users,
+  XCircle,
+} from 'lucide-react'
 import { supabase, CLUB_ID, friendlyError } from '../lib/supabase'
 import { useClub } from '../context/ClubContext'
 import type { Role } from '../types'
@@ -13,6 +19,7 @@ interface MemberRow {
   avatar_url: string | null
   role: Role
   created_at: string
+  email_verified: boolean
 }
 
 export default function Members() {
@@ -21,18 +28,16 @@ export default function Members() {
   const [members, setMembers] = useState<MemberRow[]>([])
   const [loading, setLoading] = useState(true)
   const [changing, setChanging] = useState<string | null>(null)
+  const [verifying, setVerifying] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function loadMembers() {
     setLoading(true)
     setError(null)
 
-    const { data, error } = await supabase
-      .from('club_members_directory')
-      .select('*')
-      .eq('club_id', CLUB_ID)
-      .order('role', { ascending: true })
-      .order('display_name', { ascending: true })
+    const { data, error } = await supabase.rpc('list_club_members', {
+      _club_id: CLUB_ID,
+    })
 
     if (error) {
       setError(friendlyError(error))
@@ -51,10 +56,13 @@ export default function Members() {
   async function changeRole(member: MemberRow) {
     if (!isAdmin) return
 
-    const nextRole: Role = member.role === 'admin' ? 'member' : 'admin'
+    const nextRole: Role =
+      member.role === 'admin' ? 'member' : 'admin'
 
     const action =
-      nextRole === 'admin' ? 'make this member an admin' : 'remove their admin access'
+      nextRole === 'admin'
+        ? `make ${member.display_name} an admin`
+        : `remove admin access from ${member.display_name}`
 
     if (!window.confirm(`Are you sure you want to ${action}?`)) {
       return
@@ -79,11 +87,52 @@ export default function Members() {
     await loadMembers()
   }
 
+  async function verifyEmail(member: MemberRow) {
+    if (!isAdmin || member.email_verified) return
+
+    const confirmed = window.confirm(
+      `Verify ${member.display_name}'s email manually?\n\n` +
+        `This will mark their email as verified in Club Space.`
+    )
+
+    if (!confirmed) return
+
+    setVerifying(member.user_id)
+    setError(null)
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'admin-verify-member',
+        {
+          body: {
+            club_id: CLUB_ID,
+            user_id: member.user_id,
+          },
+        }
+      )
+
+      if (error || !data?.verified) {
+        setError(
+          data?.error || 'Could not verify this member.'
+        )
+        return
+      }
+
+      await loadMembers()
+    } catch {
+      setError('Could not verify this member.')
+    } finally {
+      setVerifying(null)
+    }
+  }
+
   return (
     <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto space-y-6">
+      {/* Header */}
       <div>
         <div className="flex items-center gap-3">
           <Users className="text-primary" size={24} />
+
           <h1 className="text-2xl font-extrabold text-deep">
             Club Members
           </h1>
@@ -94,12 +143,14 @@ export default function Members() {
         </p>
       </div>
 
+      {/* Error */}
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       ) : null}
 
+      {/* Loading */}
       {loading ? (
         <div className="rounded-card bg-white/70 border border-lavender/60 p-6 text-sm text-muted">
           Loading members…
@@ -112,6 +163,7 @@ export default function Members() {
               className="rounded-card bg-white/70 border border-lavender/60 p-4 sm:p-5"
             >
               <div className="flex items-center gap-4">
+                {/* Avatar */}
                 <div className="h-12 w-12 shrink-0 rounded-full bg-lavender flex items-center justify-center text-primary font-bold overflow-hidden">
                   {member.avatar_url ? (
                     <img
@@ -120,10 +172,13 @@ export default function Members() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    member.display_name.charAt(0).toUpperCase()
+                    member.display_name
+                      .charAt(0)
+                      .toUpperCase()
                   )}
                 </div>
 
+                {/* Member info */}
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-deep truncate">
                     {member.display_name}
@@ -133,6 +188,7 @@ export default function Members() {
                     @{member.username}
                   </p>
 
+                  {/* Role */}
                   <span
                     className={[
                       'inline-flex items-center gap-1 mt-2 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide',
@@ -147,20 +203,60 @@ export default function Members() {
 
                     {member.role}
                   </span>
+
+                  {/* Email verification */}
+                  <div className="mt-2">
+                    {member.email_verified ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                        <CheckCircle2 size={13} />
+                        Email verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                        <XCircle size={13} />
+                        Email not verified
+                      </span>
+                    )}
+                  </div>
                 </div>
 
+                {/* Admin controls */}
                 {isAdmin ? (
-                  <button
-                    onClick={() => void changeRole(member)}
-                    disabled={changing === member.user_id}
-                    className="shrink-0 rounded-xl border border-lavender px-3 py-2 text-xs font-semibold text-primary hover:bg-lavender/30 disabled:opacity-50"
-                  >
-                    {changing === member.user_id
-                      ? 'Updating…'
-                      : member.role === 'admin'
-                        ? 'Remove Admin'
-                        : 'Make Admin'}
-                  </button>
+                  <div className="shrink-0 flex flex-col items-end gap-2">
+                    {/* Verify email */}
+                    {!member.email_verified ? (
+                      <button
+                        onClick={() =>
+                          void verifyEmail(member)
+                        }
+                        disabled={
+                          verifying === member.user_id
+                        }
+                        className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                      >
+                        {verifying === member.user_id
+                          ? 'Verifying…'
+                          : 'Verify Email'}
+                      </button>
+                    ) : null}
+
+                    {/* Role */}
+                    <button
+                      onClick={() =>
+                        void changeRole(member)
+                      }
+                      disabled={
+                        changing === member.user_id
+                      }
+                      className="rounded-xl border border-lavender px-3 py-2 text-xs font-semibold text-primary hover:bg-lavender/30 disabled:opacity-50"
+                    >
+                      {changing === member.user_id
+                        ? 'Updating…'
+                        : member.role === 'admin'
+                          ? 'Remove Admin'
+                          : 'Make Admin'}
+                    </button>
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -174,6 +270,7 @@ export default function Members() {
         </div>
       )}
 
+      {/* Admin note */}
       {isAdmin ? (
         <p className="text-xs text-muted flex items-center gap-1">
           <ShieldOff size={13} />
