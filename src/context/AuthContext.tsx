@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../types'
@@ -8,7 +14,10 @@ interface AuthContextValue {
   user: User | null
   profile: Profile | null
   loading: boolean
-  signIn: (identifier: string, password: string) => Promise<{ error: string | null }>
+  signIn: (
+    identifier: string,
+    password: string
+  ) => Promise<{ error: string | null }>
   signUp: (
     email: string,
     password: string,
@@ -27,32 +36,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   async function loadProfile(userId: string) {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (error) {
+        setProfile(null)
+        return
+      }
+
+      setProfile((data as Profile | null) ?? null)
+    } catch {
       setProfile(null)
-      return
     }
-    setProfile((data as Profile | null) ?? null)
   }
 
   useEffect(() => {
     let mounted = true
 
     async function bootstrap() {
-      const { data } = await supabase.auth.getSession()
-      if (!mounted) return
-      setSession(data.session)
-      if (data.session) await loadProfile(data.session.user.id)
-      if (mounted) setLoading(false)
+      try {
+        const { data, error } = await supabase.auth.getSession()
+
+        if (!mounted) return
+
+        if (error) {
+          setSession(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+
+        setSession(data.session)
+
+        if (data.session) {
+          await loadProfile(data.session.user.id)
+        } else {
+          setProfile(null)
+        }
+      } catch {
+        if (mounted) {
+          setSession(null)
+          setProfile(null)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
     }
 
     void bootstrap()
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return
+
       setSession(newSession)
+
       if (newSession) {
-        // Defer the profile query so it never blocks Supabase's auth callback.
-        window.setTimeout(() => void loadProfile(newSession.user.id), 0)
+        // Keep profile loading out of the auth callback.
+        window.setTimeout(() => {
+          if (mounted) {
+            void loadProfile(newSession.user.id)
+          }
+        }, 0)
       } else {
         setProfile(null)
       }
@@ -60,28 +112,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false
-      sub.subscription.unsubscribe()
+      subscription.unsubscribe()
     }
   }, [])
 
-  async function signIn(identifier: string, password: string): Promise<{ error: string | null }> {
+  async function signIn(
+    identifier: string,
+    password: string
+  ): Promise<{ error: string | null }> {
     try {
-      let email = identifier.trim().toLowerCase()
-      if (!email) return { error: 'Enter your username or email.' }
+      const cleanIdentifier = identifier.trim().toLowerCase()
 
-      if (!email.includes('@')) {
-        const { data, error } = await supabase.rpc('get_email_for_username', {
-          _username: email,
-        })
-        if (error || !data) return { error: 'We could not find that account.' }
-        email = String(data)
+      if (!cleanIdentifier || !password) {
+        return {
+          error: 'Enter your username/email and password.',
+        }
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) return { error: 'Incorrect username/email or password.' }
+      /*
+       * Username login:
+       * username + password
+       *        ↓
+       * sign-in-with-username Edge Function
+       *        ↓
+       * authenticated Supabase session
+       */
+      if (!cleanIdentifier.includes('@')) {
+        const { data, error } = await supabase.functions.invoke(
+          'sign-in-with-username',
+          {
+            body: {
+              username: cleanIdentifier,
+              password,
+            },
+          }
+        )
+
+        if (error || !data?.session) {
+          return {
+            error: data?.error ?? 'Incorrect username or password.',
+          }
+        }
+
+        const { error: sessionError } =
+          await supabase.auth.setSession(data.session)
+
+        if (sessionError) {
+          return {
+            error: 'Incorrect username or password.',
+          }
+        }
+
+        return { error: null }
+      }
+
+      /*
+       * Email login stays with Supabase Auth directly.
+       */
+      const { error } = await supabase.auth.signInWithPassword({
+        email: cleanIdentifier,
+        password,
+      })
+
+      if (error) {
+        return {
+          error: 'Incorrect username/email or password.',
+        }
+      }
+
       return { error: null }
     } catch {
-      return { error: "We couldn't sign you in right now. Please try again." }
+      return {
+        error: "We couldn't sign you in right now. Please try again.",
+      }
     }
   }
 
@@ -97,34 +200,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const cleanDisplayName = displayName.trim()
 
       if (!cleanEmail || !cleanUsername || !cleanDisplayName) {
-        return { error: 'Please complete all fields.' }
+        return {
+          error: 'Please complete all fields.',
+        }
       }
+
       if (!/^[a-z0-9._-]{3,32}$/.test(cleanUsername)) {
-        return { error: 'Username must be 3–32 characters and use letters, numbers, dots, underscores or hyphens.' }
+        return {
+          error:
+            'Username must be 3–32 characters and use letters, numbers, dots, underscores or hyphens.',
+        }
+      }
+
+      if (cleanDisplayName.length > 80) {
+        return {
+          error: 'Display name must be 80 characters or fewer.',
+        }
+      }
+
+      if (password.length < 12) {
+        return {
+          error: 'Password must be at least 12 characters.',
+        }
       }
 
       const { error } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
-        options: { data: { username: cleanUsername, display_name: cleanDisplayName } },
+        options: {
+          data: {
+            username: cleanUsername,
+            display_name: cleanDisplayName,
+          },
+        },
       })
+
       if (error) {
-        if (error.message.toLowerCase().includes('already')) return { error: 'That email or username is already registered.' }
-        if (error.message.toLowerCase().includes('password')) return { error: 'Please choose a stronger password.' }
-        return { error: 'We could not create your account.' }
+        const message = error.message.toLowerCase()
+
+        if (
+          message.includes('already') ||
+          message.includes('registered')
+        ) {
+          return {
+            error:
+              'That email or username may already be registered.',
+          }
+        }
+
+        if (
+          message.includes('password') ||
+          message.includes('weak') ||
+          message.includes('pwned')
+        ) {
+          return {
+            error: 'Please choose a stronger password.',
+          }
+        }
+
+        return {
+          error: 'We could not create your account.',
+        }
       }
+
       return { error: null }
     } catch {
-      return { error: "We couldn't create your account right now. Please try again." }
+      return {
+        error: "We couldn't create your account right now. Please try again.",
+      }
     }
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      setSession(null)
+      setProfile(null)
+    }
   }
 
   async function refreshProfile() {
-    if (session) await loadProfile(session.user.id)
+    if (!session) return
+
+    await loadProfile(session.user.id)
   }
 
   return (
@@ -147,6 +306,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+
+  if (!ctx) {
+    throw new Error('useAuth must be used within AuthProvider')
+  }
+
   return ctx
 }
