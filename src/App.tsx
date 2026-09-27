@@ -14,6 +14,7 @@ import Memories from './pages/Memories'
 import EventGallery from './pages/EventGallery'
 import ClubChat from './pages/ClubChat'
 import Profile from './pages/Profile'
+import Members from './pages/Members'
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="memories" element={<Memories />} />
         <Route path="memories/:eventId" element={<EventGallery />} />
         <Route path="chat" element={<ClubChat />} />
+        <Route path="members" element={<Members />} />
         <Route path="profile" element={<Profile />} />
       </Route>
     </Routes>

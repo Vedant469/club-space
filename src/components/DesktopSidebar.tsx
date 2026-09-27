@@ -9,7 +9,8 @@ const NAV_ITEMS = [
   { to: '/documents', glyph: '✧', label: 'Documents' },
   { to: '/memories', glyph: '✦', label: 'Memories' },
   { to: '/chat', glyph: '✧', label: 'Club Chat' },
-  { to: '/profile', glyph: '✦', label: 'Profile' },
+  { to: '/members', glyph: '✦', label: 'Members' },
+  { to: '/profile', glyph: '✧', label: 'Profile' },
 ]
 
 export default function DesktopSidebar() {
