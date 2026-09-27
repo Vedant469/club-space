@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import StarIcon from './StarIcon'
+import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../context/AuthContext'
 
 const NAV_ITEMS = [
@@ -20,7 +21,9 @@ export default function DesktopSidebar() {
     <aside className="hidden md:flex md:flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-lavender/60 bg-white/60 backdrop-blur-sm px-4 py-6">
       <div className="px-2 mb-8">
         <p className="text-xs tracking-[0.3em] text-muted">✦ ⋆ ✧</p>
-        <h1 className="text-xl font-extrabold text-deep tracking-wide">CLUB SPACE</h1>
+        <h1 className="text-xl font-extrabold text-deep tracking-wide">
+          CLUB SPACE
+        </h1>
       </div>
 
       <nav className="flex flex-col gap-1">
@@ -40,7 +43,12 @@ export default function DesktopSidebar() {
           >
             {({ isActive }) => (
               <>
-                <StarIcon glyph={item.glyph} active={isActive} size={16} onClick={() => undefined} />
+                <StarIcon
+                  glyph={item.glyph}
+                  active={isActive}
+                  size={16}
+                  onClick={() => undefined}
+                />
                 <span>{item.label}</span>
               </>
             )}
@@ -48,8 +56,17 @@ export default function DesktopSidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto px-2 pt-6 text-xs text-muted">
-        {profile ? <p>Signed in as {profile.display_name}</p> : null}
+      <div className="mt-auto px-2 pt-6">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-xs text-muted">Appearance</span>
+          <ThemeToggle />
+        </div>
+
+        {profile ? (
+          <p className="text-xs text-muted">
+            Signed in as {profile.display_name}
+          </p>
+        ) : null}
       </div>
     </aside>
   )
