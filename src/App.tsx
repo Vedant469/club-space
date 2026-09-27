@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import SplashScreen from './components/SplashScreen'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -16,11 +16,20 @@ import ClubChat from './pages/ClubChat'
 import Profile from './pages/Profile'
 import Members from './pages/Members'
 
+const SPLASH_KEY = 'club-space-splash-seen'
+
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true)
+  const [showSplash, setShowSplash] = useState(() => {
+    return sessionStorage.getItem(SPLASH_KEY) !== 'true'
+  })
+
+  const handleSplashFinish = useCallback(() => {
+    sessionStorage.setItem(SPLASH_KEY, 'true')
+    setShowSplash(false)
+  }, [])
 
   if (showSplash) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />
+    return <SplashScreen onFinish={handleSplashFinish} />
   }
 
   return (
