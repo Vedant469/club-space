@@ -1,15 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
 
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL ||
+  'https://nbowmxfsxsadmdaddhto.supabase.co'
+
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseAnonKey) {
+  throw new Error('Supabase publishable key is missing.')
+}
+
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+  supabaseUrl,
+  supabaseAnonKey
 )
 
 // Club Space currently assumes a single club per deployment.
-// Swap this for a club picker later if you support multiple clubs.
-export const CLUB_ID = import.meta.env.VITE_CLUB_ID
+export const CLUB_ID =
+  import.meta.env.VITE_CLUB_ID ||
+  '00000000-0000-0000-0000-000000000001'
 
-/** Maps a Supabase/Postgres error to a friendly, non-technical message. */
 export function friendlyError(_error: unknown): string {
   return "We couldn't do that right now. Please try again."
 }
