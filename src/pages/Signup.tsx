@@ -70,7 +70,7 @@ export default function Signup() {
           />
           <input
             required
-            minLength={6}
+            minLength={12}
             type="password"
             placeholder="Password"
             value={password}
