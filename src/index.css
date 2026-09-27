@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==================================================
+   BASE
+   ================================================== */
+
 html,
 body,
 #root {
@@ -25,63 +29,111 @@ body {
   background: #fbf8ff;
   color: #30253d;
   -webkit-font-smoothing: antialiased;
-  transition:
-    background-color 0.5s ease,
-    color 0.5s ease;
-}
 
-.dark body {
-  background: #0d0a14;
-  color: #f7f2ff;
+  transition:
+    background-color 0.45s ease,
+    color 0.35s ease;
 }
 
 .font-accent {
   font-family: 'Caveat', cursive;
 }
 
+/* ==================================================
+   CLUB SPACE — PREMIUM DARK MODE
+   Midnight / Plum / Soft Lavender
+   ================================================== */
+
+.dark body {
+  background: #0d0a14;
+  color: #f7f2ff;
+}
+
 /* --------------------------------------------------
-   CLUB SPACE — PREMIUM DARK THEME
+   MAIN BACKGROUND
    -------------------------------------------------- */
 
-/* Main background */
 .dark .bg-background {
   background-color: #0d0a14;
 }
 
-/* White surfaces / cards */
+/* --------------------------------------------------
+   WHITE SURFACES
+   -------------------------------------------------- */
+
 .dark .bg-white {
   background-color: #1b1627;
 }
 
-/* Semi-transparent white surfaces */
-.dark .bg-white\/60 {
-  background-color: rgba(20, 16, 29, 0.88);
-}
-
-.dark .bg-white\/80 {
-  background-color: rgba(27, 22, 39, 0.88);
-}
-
+/*
+  Handle every white opacity currently used
+  throughout the app.
+*/
+.dark .bg-white\/40,
+.dark .bg-white\/50,
+.dark .bg-white\/60,
+.dark .bg-white\/70,
+.dark .bg-white\/80,
 .dark .bg-white\/90 {
-  background-color: rgba(20, 16, 29, 0.94);
+  background-color: #1b1627;
 }
 
-/* Lavender surfaces */
+/* --------------------------------------------------
+   LAVENDER SURFACES
+   -------------------------------------------------- */
+
 .dark .bg-lavender {
   background-color: #332545;
 }
 
+/* Very subtle lavender */
+.dark .bg-lavender\/20 {
+  background-color: #171220;
+}
+
+/* Soft lavender */
+.dark .bg-lavender\/30 {
+  background-color: #1c1527;
+}
+
+/* Medium lavender */
+.dark .bg-lavender\/40 {
+  background-color: #21192e;
+}
+
+/* Elevated lavender */
+.dark .bg-lavender\/50 {
+  background-color: #281e38;
+}
+
+/* Strong lavender */
+.dark .bg-lavender\/60 {
+  background-color: #2e2340;
+}
+
+/* Active navigation */
 .dark .bg-lavender\/70 {
   background-color: #332545;
 }
 
-/* Pink surfaces */
+/* --------------------------------------------------
+   PINK SURFACES
+   -------------------------------------------------- */
+
 .dark .bg-pink {
   background-color: #261a29;
 }
 
-.dark .bg-pink\/30 {
-  background-color: rgba(38, 26, 41, 0.88);
+.dark .bg-pink\/20 {
+  background-color: #19121b;
+}
+
+.dark .bg-pink\/30,
+.dark .bg-pink\/40,
+.dark .bg-pink\/50,
+.dark .bg-pink\/60,
+.dark .bg-pink\/70 {
+  background-color: #261a29;
 }
 
 /* --------------------------------------------------
@@ -108,31 +160,38 @@ body {
   border-color: #352a45;
 }
 
+.dark .border-lavender\/40 {
+  border-color: #30243f;
+}
+
+.dark .border-lavender\/50 {
+  border-color: #352a45;
+}
+
 .dark .border-lavender\/60 {
-  border-color: rgba(53, 42, 69, 0.82);
+  border-color: #3a2d4a;
 }
 
 .dark .border-lavender\/70 {
-  border-color: rgba(69, 54, 87, 0.82);
+  border-color: #453657;
+}
+
+.dark .border-lavender\/80 {
+  border-color: #4b3a5e;
 }
 
 /* --------------------------------------------------
    NAVIGATION
    -------------------------------------------------- */
 
-/* Inactive navigation hover */
-.dark .hover\:bg-lavender\/30:hover {
-  background-color: rgba(51, 37, 69, 0.62);
-}
-
-/* Active navigation */
+/* Active navigation item */
 .dark .bg-lavender\/70 {
   background-color: #332545;
 }
 
-/* Keep active navigation text bright */
-.dark .bg-lavender\/70.text-primary {
-  color: #cdb5ff;
+/* Inactive navigation hover */
+.dark .hover\:bg-lavender\/30:hover {
+  background-color: #241b32;
 }
 
 /* Hover text */
@@ -141,19 +200,19 @@ body {
 }
 
 /* --------------------------------------------------
-   SHADOWS
+   CARDS / DEPTH
    -------------------------------------------------- */
 
 .dark .shadow-soft {
   box-shadow:
     0 18px 45px -18px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(184, 154, 239, 0.03);
+    0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .dark .shadow-glow {
   box-shadow:
-    0 0 0 4px rgba(184, 154, 239, 0.1),
-    0 8px 24px rgba(0, 0, 0, 0.18);
+    0 0 0 4px rgba(184, 154, 239, 0.08),
+    0 10px 28px rgba(0, 0, 0, 0.2);
 }
 
 /* --------------------------------------------------
@@ -180,25 +239,16 @@ body {
 }
 
 /* --------------------------------------------------
-   STAR BURST PARTICLES
+   BUTTONS
    -------------------------------------------------- */
 
-@keyframes star-burst {
-  0% {
-    transform: scale(0.3) translate(0, 0) rotate(0deg);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(1.3) translate(var(--tx), var(--ty)) rotate(180deg);
-    opacity: 0;
-  }
-}
-
-.star-burst-particle {
-  position: absolute;
-  pointer-events: none;
-  animation: star-burst 0.7s ease-out forwards;
+.dark button {
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.35s ease,
+    box-shadow 0.4s ease,
+    transform 0.2s ease;
 }
 
 /* --------------------------------------------------
@@ -222,19 +272,30 @@ select {
     box-shadow 0.45s ease;
 }
 
-/* Respect reduced motion globally */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+/* --------------------------------------------------
+   STAR BURST
+   -------------------------------------------------- */
+
+@keyframes star-burst {
+  0% {
+    transform: scale(0.3) translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1.3) translate(var(--tx), var(--ty)) rotate(180deg);
+    opacity: 0;
   }
 }
 
+.star-burst-particle {
+  position: absolute;
+  pointer-events: none;
+  animation: star-burst 0.7s ease-out forwards;
+}
+
 /* --------------------------------------------------
-   CUSTOM SCROLLBAR
+   SCROLLBAR
    -------------------------------------------------- */
 
 ::-webkit-scrollbar {
@@ -253,4 +314,18 @@ select {
 
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* --------------------------------------------------
+   REDUCED MOTION
+   -------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
