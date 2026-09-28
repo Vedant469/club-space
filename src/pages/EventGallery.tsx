@@ -64,15 +64,34 @@ export default function EventGallery() {
   }
 
   async function handleDelete(photo: PhotoWithUrl) {
-    setPhotos((prev) => prev?.filter((p) => p.id !== photo.id) ?? null)
-    await supabase.storage.from('club-photos').remove([photo.storage_path])
-    const { error } = await supabase.from('event_photos').delete().eq('id', photo.id)
-    if (error) {
-      setError(friendlyError(error))
-      load()
-    }
+  const confirmed = window.confirm(
+    'Delete this photo?\n\nThis action cannot be undone.'
+  )
+
+  if (!confirmed) return
+
+  setPhotos((prev) => prev?.filter((p) => p.id !== photo.id) ?? null)
+
+  const { error: storageError } = await supabase.storage
+    .from('club-photos')
+    .remove([photo.storage_path])
+
+  if (storageError) {
+    setError(friendlyError(storageError))
+    load()
+    return
   }
 
+  const { error } = await supabase
+    .from('event_photos')
+    .delete()
+    .eq('id', photo.id)
+
+  if (error) {
+    setError(friendlyError(error))
+    load()
+  }
+}
   const viewerPhotos: ViewerPhoto[] = (photos ?? []).map((p) => ({ url: p.url, caption: p.caption }))
 
   return (

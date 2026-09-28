@@ -82,13 +82,26 @@ export default function MyTasks() {
   }
 
   async function handleDelete(id: string) {
-    setTasks((prev) => prev?.filter((t) => t.id !== id) ?? null)
-    const { error } = await supabase.from('personal_tasks').delete().eq('id', id)
-    if (error) {
-      setError(friendlyError(error))
-      load()
-    }
+  const task = tasks?.find((t) => t.id === id)
+
+  const confirmed = window.confirm(
+    `Delete "${task?.title ?? 'this task'}"?\n\nThis action cannot be undone.`
+  )
+
+  if (!confirmed) return
+
+  setTasks((prev) => prev?.filter((t) => t.id !== id) ?? null)
+
+  const { error } = await supabase
+    .from('personal_tasks')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    setError(friendlyError(error))
+    load()
   }
+}
 
   return (
     <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto space-y-5">

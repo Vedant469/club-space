@@ -11,7 +11,7 @@ import type { ClubEvent, ClubTask } from '../types'
 
 export default function ClubTasks() {
   const { user } = useAuth()
-  const { members } = useClub()
+  const { members, isAdmin } = useClub()
   const [tasks, setTasks] = useState<ClubTask[] | null>(null)
   const [events, setEvents] = useState<ClubEvent[]>([])
   const [search, setSearch] = useState('')
@@ -82,24 +82,66 @@ export default function ClubTasks() {
   }
 
   async function handleToggle(task: ClubTask) {
-    const nextStatus = task.status === 'completed' ? 'todo' : 'completed'
-    setTasks((prev) => prev?.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)) ?? null)
-    const { error } = await supabase.from('club_tasks').update({ status: nextStatus }).eq('id', task.id)
-    if (error) {
-      setError(friendlyError(error))
-      load()
-    }
+  if (!user) return
+
+  const nextStatus = task.status === 'completed' ? 'todo' : 'completed'
+
+  setError(null)
+  setTasks(
+    (prev) =>
+      prev?.map((t) =>
+        t.id === task.id ? { ...t, status: nextStatus } : t
+      ) ?? null
+  )
+
+  const isOwner = task.created_by === user.id
+  const isAssignee = task.assigned_to === user.id
+
+  let error
+
+  if (!isAdmin && !isOwner && isAssignee) {
+    const result = await supabase.rpc('update_assigned_club_task_status', {
+      _task_id: task.id,
+      _status: nextStatus,
+    })
+
+    error = result.error
+  } else {
+    const result = await supabase
+      .from('club_tasks')
+      .update({ status: nextStatus })
+      .eq('id', task.id)
+
+    error = result.error
   }
+
+  if (error) {
+    setError(friendlyError(error))
+    load()
+  }
+}
 
   async function handleDelete(id: string) {
-    setTasks((prev) => prev?.filter((t) => t.id !== id) ?? null)
-    const { error } = await supabase.from('club_tasks').delete().eq('id', id)
-    if (error) {
-      setError(friendlyError(error))
-      load()
-    }
-  }
+  const task = tasks?.find((t) => t.id === id)
 
+  const confirmed = window.confirm(
+    `Delete "${task?.title ?? 'this task'}"?\n\nThis action cannot be undone.`
+  )
+
+  if (!confirmed) return
+
+  setTasks((prev) => prev?.filter((t) => t.id !== id) ?? null)
+
+  const { error } = await supabase
+    .from('club_tasks')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    setError(friendlyError(error))
+    load()
+  }
+}
   const assigneeOptions = members.filter((m) => m.profile).map((m) => ({ value: m.user_id, label: m.profile!.display_name }))
   const eventOptions = events.map((e) => ({ value: e.id, label: e.name }))
 
