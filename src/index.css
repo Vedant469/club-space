@@ -14,6 +14,7 @@ body,
 
 html {
   color-scheme: light;
+  background: #fffdf3;
   transition:
     background-color 0.5s ease,
     color 0.5s ease;
@@ -21,13 +22,14 @@ html {
 
 html.dark {
   color-scheme: dark;
+  background: #120d18;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  background: #fbf8ff;
-  color: #30253d;
+  background: #fffdf3;
+  color: #3a2940;
   -webkit-font-smoothing: antialiased;
 
   transition:
@@ -40,21 +42,21 @@ body {
 }
 
 /* ==================================================
-   CLUB SPACE — PREMIUM DARK MODE
-   Midnight / Plum / Soft Lavender
+   CLUB SPACE — BRAND DARK MODE
+   Deep Plum / Midnight / Lavender / Lotus
    ================================================== */
 
-.dark body {
-  background: #0d0a14;
-  color: #f7f2ff;
-}
-
 /* --------------------------------------------------
-   MAIN BACKGROUND
+   PAGE BACKGROUND
    -------------------------------------------------- */
 
+.dark body {
+  background: #120d18;
+  color: #f8f2ff;
+}
+
 .dark .bg-background {
-  background-color: #0d0a14;
+  background-color: #120d18;
 }
 
 /* --------------------------------------------------
@@ -62,20 +64,16 @@ body {
    -------------------------------------------------- */
 
 .dark .bg-white {
-  background-color: #1b1627;
+  background-color: #1d1525;
 }
 
-/*
-  Handle every white opacity currently used
-  throughout the app.
-*/
 .dark .bg-white\/40,
 .dark .bg-white\/50,
 .dark .bg-white\/60,
 .dark .bg-white\/70,
 .dark .bg-white\/80,
 .dark .bg-white\/90 {
-  background-color: #1b1627;
+  background-color: #1d1525;
 }
 
 /* --------------------------------------------------
@@ -83,57 +81,72 @@ body {
    -------------------------------------------------- */
 
 .dark .bg-lavender {
-  background-color: #332545;
+  background-color: #352642;
 }
 
-/* Very subtle lavender */
 .dark .bg-lavender\/20 {
-  background-color: #171220;
+  background-color: #18111f;
 }
 
-/* Soft lavender */
 .dark .bg-lavender\/30 {
-  background-color: #1c1527;
+  background-color: #211829;
 }
 
-/* Medium lavender */
 .dark .bg-lavender\/40 {
-  background-color: #21192e;
+  background-color: #281d32;
 }
 
-/* Elevated lavender */
 .dark .bg-lavender\/50 {
-  background-color: #281e38;
+  background-color: #2e213a;
 }
 
-/* Strong lavender */
 .dark .bg-lavender\/60 {
-  background-color: #2e2340;
+  background-color: #33253f;
 }
 
-/* Active navigation */
 .dark .bg-lavender\/70 {
-  background-color: #332545;
+  background-color: #352642;
 }
 
 /* --------------------------------------------------
-   PINK SURFACES
+   LOTUS / PINK SURFACES
    -------------------------------------------------- */
 
 .dark .bg-pink {
-  background-color: #261a29;
+  background-color: #382030;
 }
 
 .dark .bg-pink\/20 {
-  background-color: #19121b;
+  background-color: #21131c;
 }
 
-.dark .bg-pink\/30,
-.dark .bg-pink\/40,
-.dark .bg-pink\/50,
-.dark .bg-pink\/60,
+.dark .bg-pink\/30 {
+  background-color: #2a1822;
+}
+
+.dark .bg-pink\/40 {
+  background-color: #301b27;
+}
+
+.dark .bg-pink\/50 {
+  background-color: #351e2b;
+}
+
+.dark .bg-pink\/60 {
+  background-color: #3a2130;
+}
+
 .dark .bg-pink\/70 {
-  background-color: #261a29;
+  background-color: #402433;
+}
+
+/* Future brand utility support */
+.dark .bg-lotus {
+  background-color: #8f466b;
+}
+
+.dark .bg-lotusSoft {
+  background-color: #382030;
 }
 
 /* --------------------------------------------------
@@ -141,15 +154,23 @@ body {
    -------------------------------------------------- */
 
 .dark .text-deep {
-  color: #f7f2ff;
+  color: #f8f2ff;
 }
 
 .dark .text-muted {
-  color: #a99cb8;
+  color: #b0a2b8;
 }
 
 .dark .text-primary {
-  color: #b89aef;
+  color: #b79ae8;
+}
+
+.dark .text-lotus {
+  color: #e982b8;
+}
+
+.dark .text-sage {
+  color: #93b18a;
 }
 
 /* --------------------------------------------------
@@ -157,46 +178,53 @@ body {
    -------------------------------------------------- */
 
 .dark .border-lavender {
-  border-color: #352a45;
+  border-color: #352642;
 }
 
 .dark .border-lavender\/40 {
-  border-color: #30243f;
+  border-color: #2d2138;
 }
 
 .dark .border-lavender\/50 {
-  border-color: #352a45;
+  border-color: #352642;
 }
 
 .dark .border-lavender\/60 {
-  border-color: #3a2d4a;
+  border-color: #3d2d49;
 }
 
 .dark .border-lavender\/70 {
-  border-color: #453657;
+  border-color: #483552;
 }
 
 .dark .border-lavender\/80 {
-  border-color: #4b3a5e;
+  border-color: #513c5e;
+}
+
+/* Pink borders */
+
+.dark .border-pink {
+  border-color: #5a3048;
+}
+
+.dark .border-pink\/50 {
+  border-color: #5a3048;
+}
+
+.dark .border-pink\/60 {
+  border-color: #643651;
 }
 
 /* --------------------------------------------------
    NAVIGATION
    -------------------------------------------------- */
 
-/* Active navigation item */
-.dark .bg-lavender\/70 {
-  background-color: #332545;
-}
-
-/* Inactive navigation hover */
 .dark .hover\:bg-lavender\/30:hover {
-  background-color: #241b32;
+  background-color: #2a1e35;
 }
 
-/* Hover text */
-.dark .hover\:bg-lavender\/30:hover .text-deep {
-  color: #f7f2ff;
+.dark .hover\:text-deep:hover {
+  color: #f8f2ff;
 }
 
 /* --------------------------------------------------
@@ -205,14 +233,14 @@ body {
 
 .dark .shadow-soft {
   box-shadow:
-    0 18px 45px -18px rgba(0, 0, 0, 0.65),
+    0 18px 45px -18px rgba(0, 0, 0, 0.75),
     0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .dark .shadow-glow {
   box-shadow:
-    0 0 0 4px rgba(184, 154, 239, 0.08),
-    0 10px 28px rgba(0, 0, 0, 0.2);
+    0 0 0 4px rgba(183, 154, 232, 0.10),
+    0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
 /* --------------------------------------------------
@@ -222,20 +250,20 @@ body {
 .dark input,
 .dark textarea,
 .dark select {
-  background-color: #1b1627;
-  color: #f7f2ff;
-  border-color: #352a45;
+  background-color: #1d1525;
+  color: #f8f2ff;
+  border-color: #352642;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #82758f;
+  color: #8f8197;
 }
 
 .dark input:focus,
 .dark textarea:focus,
 .dark select:focus {
-  border-color: #b89aef;
+  border-color: #b79ae8;
 }
 
 /* --------------------------------------------------
@@ -272,9 +300,9 @@ select {
     box-shadow 0.45s ease;
 }
 
-/* --------------------------------------------------
+/* ==================================================
    STAR BURST
-   -------------------------------------------------- */
+   ================================================== */
 
 @keyframes star-burst {
   0% {
@@ -294,9 +322,9 @@ select {
   animation: star-burst 0.7s ease-out forwards;
 }
 
-/* --------------------------------------------------
+/* ==================================================
    SCROLLBAR
-   -------------------------------------------------- */
+   ================================================== */
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -308,17 +336,36 @@ select {
   border-radius: 8px;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(141, 101, 199, 0.4);
+}
+
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(184, 154, 239, 0.28);
+  background: rgba(183, 154, 232, 0.28);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(233, 130, 184, 0.38);
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* --------------------------------------------------
+/* ==================================================
+   MOBILE SAFE AREA
+   ================================================== */
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ==================================================
    REDUCED MOTION
-   -------------------------------------------------- */
+   ================================================== */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -327,5 +374,6 @@ select {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

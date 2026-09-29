@@ -19,13 +19,18 @@ export default function DesktopSidebar() {
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-lavender/60 bg-white/60 backdrop-blur-sm px-4 py-6">
+      {/* Sidebar heading */}
       <div className="px-2 mb-8">
-        <p className="text-xs tracking-[0.3em] text-muted">✦ ⋆ ✧</p>
+        <p className="text-xs tracking-[0.3em] text-muted">
+          ✦ ⋆ ✧
+        </p>
+
         <h1 className="text-xl font-extrabold text-deep tracking-wide">
           CLUB SPACE
         </h1>
       </div>
 
+      {/* Navigation */}
       <nav className="flex flex-col gap-1">
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -49,6 +54,7 @@ export default function DesktopSidebar() {
                   size={16}
                   onClick={() => undefined}
                 />
+
                 <span>{item.label}</span>
               </>
             )}
@@ -56,17 +62,23 @@ export default function DesktopSidebar() {
         ))}
       </nav>
 
+      {/* Bottom-left controls */}
       <div className="mt-auto px-2 pt-6">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <span className="text-xs text-muted">Appearance</span>
+        <div className="flex items-center gap-3">
           <ThemeToggle />
-        </div>
 
-        {profile ? (
-          <p className="text-xs text-muted">
-            Signed in as {profile.display_name}
-          </p>
-        ) : null}
+          {profile ? (
+            <div className="min-w-0">
+              <p className="text-xs text-muted truncate">
+                Signed in as
+              </p>
+
+              <p className="text-xs font-medium text-deep truncate">
+                {profile.display_name}
+              </p>
+            </div>
+          ) : null}
+        </div>
       </div>
     </aside>
   )
