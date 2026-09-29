@@ -451,7 +451,7 @@ export default function ClubChat() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-4.5rem)] min-h-0 flex-col md:h-screen">
+    <div className="flex h-[100dvh] min-h-0 flex-col pb-[4.5rem] md:h-screen md:pb-0">
       {/* Chat header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-lavender/60 bg-white/70 px-5 py-4 dark:bg-[#1d1525]/90">
         <button
