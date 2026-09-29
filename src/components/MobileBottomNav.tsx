@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 export default function MobileBottomNav() {
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-[4.5rem] border-t border-lavender/60 bg-white/90 backdrop-blur-sm transition-colors duration-500 dark:bg-[#1d1525]/95"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4.5rem+env(safe-area-inset-bottom))] border-t border-lavender/60 bg-white/90 backdrop-blur-sm transition-colors duration-500 dark:bg-[#1d1525]/95"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}

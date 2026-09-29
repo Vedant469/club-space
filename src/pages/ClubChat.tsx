@@ -451,7 +451,7 @@ export default function ClubChat() {
   }
 
   return (
-    <div className="flex h-[100dvh] min-h-0 flex-col pb-[4.5rem] md:h-screen md:pb-0">
+    <div className="flex h-[100dvh] min-h-0 flex-col md:h-screen">
       {/* Chat header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-lavender/60 bg-white/70 px-5 py-4 dark:bg-[#1d1525]/90">
         <button
@@ -481,7 +481,7 @@ export default function ClubChat() {
       ) : null}
 
       {/* Messages */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-[6.5rem] sm:px-5 md:py-4 md:pb-4 space-y-4">
         {messages === null ? (
           <LoadingSkeleton count={4} />
         ) : messages.length === 0 ? (
