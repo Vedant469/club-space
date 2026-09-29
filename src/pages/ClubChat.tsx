@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react'
 import { ArrowLeft, Paperclip, Send, X } from 'lucide-react'
-import { supabase, CLUB_ID, friendlyError } from '../lib/supabase'
+import {
+  supabase,
+  CLUB_ID,
+  friendlyError,
+} from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useClub } from '../context/ClubContext'
 import ChatMessageBubble from '../components/ChatMessageBubble'
@@ -12,6 +21,39 @@ type Row = ChatMessage & {
   profile?: Profile
   attachmentUrl?: string | null
 }
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
+const ALLOWED_EXTENSIONS = new Set([
+  'pdf',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'csv',
+  'txt',
+  'png',
+  'jpg',
+  'jpeg',
+  'webp',
+])
+
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/csv',
+  'text/plain',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+])
 
 export default function ClubChat() {
   const { user } = useAuth()
@@ -26,13 +68,61 @@ export default function ClubChat() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  async function hydrateRealtimeRow(
+    row: Row,
+    existing?: Row
+  ): Promise<Row> {
+    let profile = existing?.profile
+
+    if (!profile || profile.id !== row.sender_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', row.sender_id)
+        .maybeSingle()
+
+      profile =
+        (profileData as Profile | null) ?? undefined
+    }
+
+    let attachmentUrl =
+      existing?.attachmentUrl ?? null
+
+    if (
+      row.attachment_path !==
+      existing?.attachment_path
+    ) {
+      attachmentUrl = null
+
+      if (row.attachment_path) {
+        const { data: signed } = await supabase.storage
+          .from('club-chat')
+          .createSignedUrl(
+            row.attachment_path,
+            3600
+          )
+
+        attachmentUrl =
+          signed?.signedUrl ?? null
+      }
+    }
+
+    return {
+      ...row,
+      profile,
+      attachmentUrl,
+    }
+  }
+
   async function load() {
     const { data, error } = await supabase
       .from('chat_messages')
       .select('*, profile:profiles(*)')
       .eq('club_id', CLUB_ID)
       .is('deleted_at', null)
-      .order('created_at', { ascending: true })
+      .order('created_at', {
+        ascending: true,
+      })
       .limit(100)
 
     if (error) {
@@ -43,54 +133,12 @@ export default function ClubChat() {
     const rows = (data as Row[]) ?? []
 
     const hydrated = await Promise.all(
-      rows.map(async (row) => {
-        if (!row.attachment_path) {
-          return {
-            ...row,
-            attachmentUrl: null,
-          }
-        }
-
-        const { data: signed } = await supabase.storage
-          .from('club-chat')
-          .createSignedUrl(row.attachment_path, 3600)
-
-        return {
-          ...row,
-          attachmentUrl: signed?.signedUrl ?? null,
-        }
-      })
+      rows.map((row) =>
+        hydrateRealtimeRow(row)
+      )
     )
 
     setMessages(hydrated)
-  }
-
-  async function hydrateRealtimeRow(row: Row): Promise<Row> {
-    let profile: Profile | undefined
-
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', row.sender_id)
-      .maybeSingle()
-
-    profile = (profileData as Profile | null) ?? undefined
-
-    let attachmentUrl: string | null = null
-
-    if (row.attachment_path) {
-      const { data: signed } = await supabase.storage
-        .from('club-chat')
-        .createSignedUrl(row.attachment_path, 3600)
-
-      attachmentUrl = signed?.signedUrl ?? null
-    }
-
-    return {
-      ...row,
-      profile,
-      attachmentUrl,
-    }
   }
 
   useEffect(() => {
@@ -114,14 +162,20 @@ export default function ClubChat() {
             return
           }
 
-          const hydrated = await hydrateRealtimeRow(row)
+          const hydrated =
+            await hydrateRealtimeRow(row)
 
           setMessages((prev) => {
             if (!prev) {
               return [hydrated]
             }
 
-            if (prev.some((message) => message.id === hydrated.id)) {
+            if (
+              prev.some(
+                (message) =>
+                  message.id === hydrated.id
+              )
+            ) {
               return prev
             }
 
@@ -141,38 +195,66 @@ export default function ClubChat() {
         async (payload) => {
           const row = payload.new as Row
 
-          // Soft-deleted messages should disappear immediately.
           if (row.deleted_at) {
             setMessages((prev) => {
               if (!prev) {
                 return null
               }
 
-              return prev.filter((message) => message.id !== row.id)
+              return prev.filter(
+                (message) =>
+                  message.id !== row.id
+              )
             })
 
             return
           }
 
-          const hydrated = await hydrateRealtimeRow(row)
+          let existing: Row | undefined
 
           setMessages((prev) => {
             if (!prev) {
-              return null
+              return prev
             }
 
-            const exists = prev.some(
-              (message) => message.id === row.id
+            existing = prev.find(
+              (message) =>
+                message.id === row.id
             )
 
-            if (!exists) {
+            if (!existing) {
               return prev
             }
 
             return prev.map((message) =>
-              message.id === row.id ? hydrated : message
+              message.id === row.id
+                ? {
+                    ...message,
+                    ...row,
+                  }
+                : message
             )
           })
+
+          if (existing) {
+            const hydrated =
+              await hydrateRealtimeRow(
+                row,
+                existing
+              )
+
+            setMessages((prev) => {
+              if (!prev) {
+                return null
+              }
+
+              return prev.map((message) =>
+                message.id === row.id
+                  ? hydrated
+                  : message
+              )
+            })
+          }
         }
       )
 
@@ -192,7 +274,10 @@ export default function ClubChat() {
               return null
             }
 
-            return prev.filter((message) => message.id !== row.id)
+            return prev.filter(
+              (message) =>
+                message.id !== row.id
+            )
           })
         }
       )
@@ -224,12 +309,14 @@ export default function ClubChat() {
         .from('chat_messages')
         .update({
           message: text.trim(),
-          updated_at: new Date().toISOString(),
+          updated_at:
+            new Date().toISOString(),
         })
         .eq('id', editingId)
 
       if (error) {
         setError(friendlyError(error))
+        return
       }
 
       setEditingId(null)
@@ -255,108 +342,92 @@ export default function ClubChat() {
     setReplyTo(null)
   }
 
-  async function handleAttach(files: FileList | null) {
-  if (!files || !files[0] || !user) return
-
-  setError(null)
-
-  const file = files[0]
-
-  const MAX_FILE_SIZE = 10 * 1024 * 1024
-
-  const allowedExtensions = new Set([
-    'pdf',
-    'doc',
-    'docx',
-    'xls',
-    'xlsx',
-    'ppt',
-    'pptx',
-    'csv',
-    'txt',
-    'png',
-    'jpg',
-    'jpeg',
-    'webp',
-  ])
-
-  const allowedMimeTypes = new Set([
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'text/csv',
-    'text/plain',
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-  ])
-
-  const extension =
-    file.name.split('.').pop()?.toLowerCase() ?? ''
-
-  if (file.size > MAX_FILE_SIZE) {
-    setError(
-      `"${file.name}" is too large. Maximum file size is 10 MB.`
-    )
-    return
-  }
-
-  if (
-    !allowedExtensions.has(extension) ||
-    (file.type && !allowedMimeTypes.has(file.type))
+  async function handleAttach(
+    files: FileList | null
   ) {
-    setError(
-      `"${file.name}" is not a supported file type.`
-    )
-    return
+    if (!files?.[0] || !user) {
+      return
+    }
+
+    setError(null)
+
+    const file = files[0]
+
+    const extension =
+      file.name
+        .split('.')
+        .pop()
+        ?.toLowerCase() ?? ''
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError(
+        `"${file.name}" is too large. Maximum file size is 10 MB.`
+      )
+      return
+    }
+
+    if (
+      !ALLOWED_EXTENSIONS.has(extension) ||
+      (file.type &&
+        !ALLOWED_MIME_TYPES.has(file.type))
+    ) {
+      setError(
+        `"${file.name}" is not a supported file type.`
+      )
+      return
+    }
+
+    const path = `${CLUB_ID}/chat/${crypto.randomUUID()}-${file.name}`
+
+    const { error: uploadError } =
+      await supabase.storage
+        .from('club-chat')
+        .upload(path, file)
+
+    if (uploadError) {
+      setError(friendlyError(uploadError))
+      return
+    }
+
+    const { error: insertError } =
+      await supabase
+        .from('chat_messages')
+        .insert({
+          club_id: CLUB_ID,
+          sender_id: user.id,
+          message: null,
+          attachment_path: path,
+          attachment_type:
+            file.type || null,
+        })
+
+    if (insertError) {
+      await supabase.storage
+        .from('club-chat')
+        .remove([path])
+
+      setError(friendlyError(insertError))
+      return
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
-  const path = `${CLUB_ID}/chat/${crypto.randomUUID()}-${file.name}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('club-chat')
-    .upload(path, file)
-
-  if (uploadError) {
-    setError(friendlyError(uploadError))
-    return
-  }
-
-  const { error: insertError } = await supabase
-    .from('chat_messages')
-    .insert({
-      club_id: CLUB_ID,
-      sender_id: user.id,
-      message: null,
-      attachment_path: path,
-      attachment_type: file.type || null,
-    })
-
-  if (insertError) {
-    await supabase.storage
-      .from('club-chat')
-      .remove([path])
-
-    setError(friendlyError(insertError))
-    return
-  }
-
-  if (fileInputRef.current) {
-    fileInputRef.current.value = ''
-  }
-}
   async function handleDelete(id: string) {
-    const message = messages?.find((m) => m.id === id)
+    const message =
+      messages?.find(
+        (item) => item.id === id
+      )
 
     const confirmed = window.confirm(
       `Delete this message?\n\n${
         message?.message
           ? `"${message.message.slice(0, 100)}${
-              message.message.length > 100 ? '…' : ''
+              message.message.length > 100
+                ? '…'
+                : ''
             }"`
           : 'This message contains an attachment.'
       }\n\nThis action cannot be undone.`
@@ -369,7 +440,8 @@ export default function ClubChat() {
     const { error } = await supabase
       .from('chat_messages')
       .update({
-        deleted_at: new Date().toISOString(),
+        deleted_at:
+          new Date().toISOString(),
       })
       .eq('id', id)
 
@@ -379,11 +451,13 @@ export default function ClubChat() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] md:h-screen">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-lavender/60 bg-white/70">
+    <div className="flex h-[calc(100dvh-4.5rem)] min-h-0 flex-col md:h-screen">
+      {/* Chat header */}
+      <div className="flex shrink-0 items-center gap-3 border-b border-lavender/60 bg-white/70 px-5 py-4 dark:bg-[#1d1525]/90">
         <button
           className="md:hidden text-muted hover:text-deep"
           aria-label="Back"
+          type="button"
         >
           <ArrowLeft size={18} />
         </button>
@@ -399,12 +473,15 @@ export default function ClubChat() {
         </div>
       </div>
 
+      {/* Error */}
       {error ? (
-        <p className="text-sm text-red-500 px-5 pt-2">
+        <p className="shrink-0 px-5 pt-2 text-sm text-red-500">
           {error}
         </p>
       ) : null}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+      {/* Messages */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 space-y-4">
         {messages === null ? (
           <LoadingSkeleton count={4} />
         ) : messages.length === 0 ? (
@@ -418,25 +495,44 @@ export default function ClubChat() {
             <ChatMessageBubble
               key={m.id}
               message={m.message}
-              senderName={m.profile?.display_name ?? 'Member'}
-              avatarUrl={m.profile?.avatar_url ?? null}
+              senderName={
+                m.profile?.display_name ??
+                'Member'
+              }
+              avatarUrl={
+                m.profile?.avatar_url ??
+                null
+              }
               createdAt={m.created_at}
-              isOwn={m.sender_id === user?.id}
-              edited={m.updated_at !== m.created_at}
+              isOwn={
+                m.sender_id === user?.id
+              }
+              edited={
+                m.updated_at !==
+                m.created_at
+              }
               replyToText={
                 m.reply_to
                   ? messages.find(
-                      (x) => x.id === m.reply_to
+                      (item) =>
+                        item.id ===
+                        m.reply_to
                     )?.message ?? null
                   : null
               }
-              attachmentUrl={m.attachmentUrl ?? null}
-              attachmentType={m.attachment_type}
+              attachmentUrl={
+                m.attachmentUrl ?? null
+              }
+              attachmentType={
+                m.attachment_type
+              }
               onEdit={() => {
                 setEditingId(m.id)
                 setText(m.message ?? '')
               }}
-              onDelete={() => handleDelete(m.id)}
+              onDelete={() =>
+                handleDelete(m.id)
+              }
             />
           ))
         )}
@@ -444,14 +540,19 @@ export default function ClubChat() {
         <div ref={bottomRef} />
       </div>
 
+      {/* Reply preview */}
       {replyTo ? (
-        <div className="flex items-center justify-between px-5 py-2 bg-lavender/30 text-xs text-deep">
+        <div className="flex shrink-0 items-center justify-between bg-lavender/30 px-5 py-2 text-xs text-deep">
           <span className="truncate">
-            Replying to: {replyTo.message}
+            Replying to:{' '}
+            {replyTo.message}
           </span>
 
           <button
-            onClick={() => setReplyTo(null)}
+            type="button"
+            onClick={() =>
+              setReplyTo(null)
+            }
             aria-label="Cancel reply"
           >
             <X size={14} />
@@ -459,19 +560,18 @@ export default function ClubChat() {
         </div>
       ) : null}
 
+      {/* Composer */}
       <form
         onSubmit={handleSend}
-        className="flex items-center gap-2 px-4 py-3 border-t border-lavender/60 bg-white/80"
-        style={{
-          paddingBottom:
-            'max(0.75rem, env(safe-area-inset-bottom))',
-        }}
+        className="flex shrink-0 items-center gap-2 border-t border-lavender/60 bg-white/90 px-3 py-3 sm:px-4 dark:bg-[#1d1525]/95"
       >
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() =>
+            fileInputRef.current?.click()
+          }
           aria-label="Attach file"
-          className="p-2.5 min-h-[44px] min-w-[44px] rounded-full text-muted hover:text-primary hover:bg-lavender/40"
+          className="min-h-[44px] min-w-[44px] rounded-full p-2.5 text-muted transition-colors hover:bg-lavender/40 hover:text-primary"
         >
           <Paperclip size={18} />
         </button>
@@ -480,14 +580,21 @@ export default function ClubChat() {
           ref={fileInputRef}
           type="file"
           className="hidden"
-          onChange={(e) => handleAttach(e.target.files)}
+          onChange={(e) =>
+            handleAttach(e.target.files)
+          }
         />
 
         <input
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) =>
+            setText(e.target.value)
+          }
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (
+              e.key === 'Enter' &&
+              !e.shiftKey
+            ) {
               e.preventDefault()
               handleSend(e)
             }
@@ -497,13 +604,13 @@ export default function ClubChat() {
               ? 'Edit your message…'
               : 'Say something...'
           }
-          className="flex-1 rounded-full border border-lavender px-4 py-2.5 text-sm text-deep outline-none focus:ring-2 focus:ring-primary/40"
+          className="min-w-0 flex-1 rounded-full border border-lavender bg-white px-4 py-2.5 text-sm text-deep outline-none transition focus:ring-2 focus:ring-primary/40 dark:bg-[#1d1525]"
         />
 
         <button
           type="submit"
           aria-label="Send message"
-          className="p-2.5 min-h-[44px] min-w-[44px] rounded-full bg-primary text-white hover:bg-primary/90 active:scale-95 transition-transform"
+          className="min-h-[44px] min-w-[44px] rounded-full bg-primary p-2.5 text-white transition-transform hover:bg-primary/90 active:scale-95"
         >
           <Send size={16} />
         </button>
