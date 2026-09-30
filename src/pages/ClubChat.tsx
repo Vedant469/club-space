@@ -563,7 +563,7 @@ export default function ClubChat() {
       {/* Composer */}
      <form
   onSubmit={handleSend}
-  className="fixed inset-x-0 bottom-[4.5rem] z-30 flex items-center gap-2 border-t border-lavender/60 bg-white/95 px-3 pt-3 pb-[calc(4.5rem+env(safe-area-inset-bottom)+0.75rem)] shadow-sm backdrop-blur-md sm:px-4 md:static md:z-auto md:shrink-0 dark:bg-[#1d1525]/95"
+  className="fixed inset-x-0 bottom-[4.5rem] z-30 flex items-center gap-2 border-t border-lavender/60 bg-white/95 px-3 py-3 pb-[calc(4.5rem+env(safe-area-inset-bottom)+0.75rem)] shadow-sm backdrop-blur-md sm:px-4 md:static md:z-auto md:shrink-0 dark:bg-[#1d1525]/95"
 >
         <button
           type="button"
