@@ -2,16 +2,22 @@ import { Outlet, useLocation } from 'react-router-dom'
 import DesktopSidebar from './DesktopSidebar'
 import MobileBottomNav from './MobileBottomNav'
 import NotificationBell from './NotificationBell'
+import { useUnreadChatCount } from '../hooks/useUnreadChatCount'
 
 export default function AppShell() {
   const location = useLocation()
+
   const isHome = location.pathname === '/'
   const isChat = location.pathname === '/chat'
+
+  const chatUnreadCount = useUnreadChatCount()
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-500">
       <div className="flex min-h-screen">
-        <DesktopSidebar />
+        <DesktopSidebar
+          chatUnreadCount={chatUnreadCount}
+        />
 
         <main
           className={`relative flex-1 min-w-0 ${
@@ -19,10 +25,13 @@ export default function AppShell() {
           }`}
         >
           {isHome ? <NotificationBell /> : null}
+
           <Outlet />
         </main>
 
-        <MobileBottomNav />
+        <MobileBottomNav
+          chatUnreadCount={chatUnreadCount}
+        />
       </div>
     </div>
   )

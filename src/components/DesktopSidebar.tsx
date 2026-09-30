@@ -14,11 +14,17 @@ const NAV_ITEMS = [
   { to: '/profile', glyph: '✧', label: 'Profile' },
 ]
 
-export default function DesktopSidebar() {
+interface DesktopSidebarProps {
+  chatUnreadCount: number
+}
+
+export default function DesktopSidebar({
+  chatUnreadCount,
+}: DesktopSidebarProps) {
   const { profile } = useAuth()
 
   return (
-    <aside className="hidden md:flex md:flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-lavender/60 bg-white/60 backdrop-blur-sm px-4 py-6">
+    <aside className="hidden md:flex md:flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-lavender/60 bg-white/60 backdrop-blur-sm px-4 py-6 dark:bg-[#1d1525]/90">
       {/* Sidebar heading */}
       <div className="px-2 mb-8">
         <p className="text-xs tracking-[0.3em] text-muted">
@@ -55,7 +61,20 @@ export default function DesktopSidebar() {
                   onClick={() => undefined}
                 />
 
-                <span>{item.label}</span>
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className="truncate">
+                    {item.label}
+                  </span>
+
+                  {item.to === '/chat' &&
+                  chatUnreadCount > 0 ? (
+                    <span className="min-w-5 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                      {chatUnreadCount > 9
+                        ? '9+'
+                        : chatUnreadCount}
+                    </span>
+                  ) : null}
+                </div>
               </>
             )}
           </NavLink>

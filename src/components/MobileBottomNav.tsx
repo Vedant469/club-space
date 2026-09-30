@@ -11,12 +11,19 @@ const NAV_ITEMS = [
   { to: '/profile', glyph: '✧', label: 'Profile' },
 ]
 
-export default function MobileBottomNav() {
+interface MobileBottomNavProps {
+  chatUnreadCount: number
+}
+
+export default function MobileBottomNav({
+  chatUnreadCount,
+}: MobileBottomNavProps) {
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4.5rem+env(safe-area-inset-bottom))] border-t border-lavender/60 bg-white/90 backdrop-blur-sm transition-colors duration-500 dark:bg-[#1d1525]/95"
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingBottom:
+          'env(safe-area-inset-bottom)',
       }}
     >
       <div className="relative h-full">
@@ -48,12 +55,24 @@ export default function MobileBottomNav() {
               >
                 {({ isActive }) => (
                   <>
-                    <StarIcon
-                      glyph={item.glyph}
-                      active={isActive}
-                      size={18}
-                      onClick={() => undefined}
-                    />
+                    <span className="relative">
+                      <StarIcon
+                        glyph={item.glyph}
+                        active={isActive}
+                        size={18}
+                        onClick={() => undefined}
+                      />
+
+                      {item.to === '/chat' &&
+                      chatUnreadCount > 0 ? (
+                        <span className="absolute -right-3 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
+                          {chatUnreadCount > 9
+                            ? '9+'
+                            : chatUnreadCount}
+                        </span>
+                      ) : null}
+                    </span>
+
                     <span>{item.label}</span>
                   </>
                 )}

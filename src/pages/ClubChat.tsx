@@ -15,6 +15,9 @@ import { useClub } from '../context/ClubContext'
 import ChatMessageBubble from '../components/ChatMessageBubble'
 import EmptyState from '../components/EmptyState'
 import LoadingSkeleton from '../components/LoadingSkeleton'
+import {
+  markClubChatRead,
+} from '../hooks/useUnreadChatCount'
 import type { ChatMessage, Profile } from '../types'
 
 type Row = ChatMessage & {
@@ -59,14 +62,20 @@ export default function ClubChat() {
   const { user } = useAuth()
   const { members } = useClub()
 
-  const [messages, setMessages] = useState<Row[] | null>(null)
+  const [messages, setMessages] =
+    useState<Row[] | null>(null)
   const [text, setText] = useState('')
-  const [replyTo, setReplyTo] = useState<Row | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [replyTo, setReplyTo] =
+    useState<Row | null>(null)
+  const [editingId, setEditingId] =
+    useState<string | null>(null)
+  const [error, setError] =
+    useState<string | null>(null)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const fileInputRef =
+    useRef<HTMLInputElement>(null)
+  const bottomRef =
+    useRef<HTMLDivElement>(null)
 
   async function hydrateRealtimeRow(
     row: Row,
@@ -74,15 +83,20 @@ export default function ClubChat() {
   ): Promise<Row> {
     let profile = existing?.profile
 
-    if (!profile || profile.id !== row.sender_id) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', row.sender_id)
-        .maybeSingle()
+    if (
+      !profile ||
+      profile.id !== row.sender_id
+    ) {
+      const { data: profileData } =
+        await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', row.sender_id)
+          .maybeSingle()
 
       profile =
-        (profileData as Profile | null) ?? undefined
+        (profileData as Profile | null) ??
+        undefined
     }
 
     let attachmentUrl =
@@ -95,12 +109,13 @@ export default function ClubChat() {
       attachmentUrl = null
 
       if (row.attachment_path) {
-        const { data: signed } = await supabase.storage
-          .from('club-chat')
-          .createSignedUrl(
-            row.attachment_path,
-            3600
-          )
+        const { data: signed } =
+          await supabase.storage
+            .from('club-chat')
+            .createSignedUrl(
+              row.attachment_path,
+              3600
+            )
 
         attachmentUrl =
           signed?.signedUrl ?? null
@@ -115,38 +130,42 @@ export default function ClubChat() {
   }
 
   async function load() {
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('*, profile:profiles(*)')
-      .eq('club_id', CLUB_ID)
-      .is('deleted_at', null)
-      .order('created_at', {
-        ascending: true,
-      })
-      .limit(100)
+    const { data, error } =
+      await supabase
+        .from('chat_messages')
+        .select(
+          '*, profile:profiles(*)'
+        )
+        .eq('club_id', CLUB_ID)
+        .is('deleted_at', null)
+        .order('created_at', {
+          ascending: true,
+        })
+        .limit(100)
 
     if (error) {
       setError(friendlyError(error))
       return
     }
 
-    const rows = (data as Row[]) ?? []
+    const rows =
+      (data as Row[]) ?? []
 
-    const hydrated = await Promise.all(
-      rows.map((row) =>
-        hydrateRealtimeRow(row)
+    const hydrated =
+      await Promise.all(
+        rows.map((row) =>
+          hydrateRealtimeRow(row)
+        )
       )
-    )
 
     setMessages(hydrated)
   }
 
   useEffect(() => {
-    load()
+    void load()
 
     const channel = supabase
       .channel(`chat-${CLUB_ID}`)
-
       .on(
         'postgres_changes',
         {
@@ -156,7 +175,8 @@ export default function ClubChat() {
           filter: `club_id=eq.${CLUB_ID}`,
         },
         async (payload) => {
-          const row = payload.new as Row
+          const row =
+            payload.new as Row
 
           if (row.deleted_at) {
             return
@@ -173,17 +193,20 @@ export default function ClubChat() {
             if (
               prev.some(
                 (message) =>
-                  message.id === hydrated.id
+                  message.id ===
+                  hydrated.id
               )
             ) {
               return prev
             }
 
-            return [...prev, hydrated].slice(-100)
+            return [
+              ...prev,
+              hydrated,
+            ].slice(-100)
           })
         }
       )
-
       .on(
         'postgres_changes',
         {
@@ -193,7 +216,8 @@ export default function ClubChat() {
           filter: `club_id=eq.${CLUB_ID}`,
         },
         async (payload) => {
-          const row = payload.new as Row
+          const row =
+            payload.new as Row
 
           if (row.deleted_at) {
             setMessages((prev) => {
@@ -226,13 +250,14 @@ export default function ClubChat() {
               return prev
             }
 
-            return prev.map((message) =>
-              message.id === row.id
-                ? {
-                    ...message,
-                    ...row,
-                  }
-                : message
+            return prev.map(
+              (message) =>
+                message.id === row.id
+                  ? {
+                      ...message,
+                      ...row,
+                    }
+                  : message
             )
           })
 
@@ -248,16 +273,16 @@ export default function ClubChat() {
                 return null
               }
 
-              return prev.map((message) =>
-                message.id === row.id
-                  ? hydrated
-                  : message
+              return prev.map(
+                (message) =>
+                  message.id === row.id
+                    ? hydrated
+                    : message
               )
             })
           }
         }
       )
-
       .on(
         'postgres_changes',
         {
@@ -267,7 +292,8 @@ export default function ClubChat() {
           filter: `club_id=eq.${CLUB_ID}`,
         },
         (payload) => {
-          const row = payload.old as Row
+          const row =
+            payload.old as Row
 
           setMessages((prev) => {
             if (!prev) {
@@ -281,11 +307,12 @@ export default function ClubChat() {
           })
         }
       )
-
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      void supabase.removeChannel(
+        channel
+      )
     }
   }, [])
 
@@ -295,7 +322,24 @@ export default function ClubChat() {
     })
   }, [messages])
 
-  async function handleSend(e: FormEvent) {
+  useEffect(() => {
+    const latestMessageId =
+      messages?.[messages.length - 1]?.id ??
+      null
+
+    if (!user || !latestMessageId) {
+      return
+    }
+
+    void markClubChatRead(user.id)
+  }, [
+    user?.id,
+    messages?.[messages?.length - 1]?.id,
+  ])
+
+  async function handleSend(
+    e: FormEvent
+  ) {
     e.preventDefault()
 
     if (!user || !text.trim()) {
@@ -305,17 +349,20 @@ export default function ClubChat() {
     setError(null)
 
     if (editingId) {
-      const { error } = await supabase
-        .from('chat_messages')
-        .update({
-          message: text.trim(),
-          updated_at:
-            new Date().toISOString(),
-        })
-        .eq('id', editingId)
+      const { error } =
+        await supabase
+          .from('chat_messages')
+          .update({
+            message: text.trim(),
+            updated_at:
+              new Date().toISOString(),
+          })
+          .eq('id', editingId)
 
       if (error) {
-        setError(friendlyError(error))
+        setError(
+          friendlyError(error)
+        )
         return
       }
 
@@ -324,17 +371,21 @@ export default function ClubChat() {
       return
     }
 
-    const { error } = await supabase
-      .from('chat_messages')
-      .insert({
-        club_id: CLUB_ID,
-        sender_id: user.id,
-        message: text.trim(),
-        reply_to: replyTo?.id ?? null,
-      })
+    const { error } =
+      await supabase
+        .from('chat_messages')
+        .insert({
+          club_id: CLUB_ID,
+          sender_id: user.id,
+          message: text.trim(),
+          reply_to:
+            replyTo?.id ?? null,
+        })
 
     if (error) {
-      setError(friendlyError(error))
+      setError(
+        friendlyError(error)
+      )
       return
     }
 
@@ -367,9 +418,13 @@ export default function ClubChat() {
     }
 
     if (
-      !ALLOWED_EXTENSIONS.has(extension) ||
+      !ALLOWED_EXTENSIONS.has(
+        extension
+      ) ||
       (file.type &&
-        !ALLOWED_MIME_TYPES.has(file.type))
+        !ALLOWED_MIME_TYPES.has(
+          file.type
+        ))
     ) {
       setError(
         `"${file.name}" is not a supported file type.`
@@ -377,36 +432,45 @@ export default function ClubChat() {
       return
     }
 
-    const path = `${CLUB_ID}/chat/${crypto.randomUUID()}-${file.name}`
+    const path =
+      `${CLUB_ID}/chat/${crypto.randomUUID()}-${file.name}`
 
     const { error: uploadError } =
       await supabase.storage
         .from('club-chat')
-        .upload(path, file)
+        .upload(
+          path,
+          file
+        )
 
     if (uploadError) {
-      setError(friendlyError(uploadError))
+      setError(
+        friendlyError(uploadError)
+      )
       return
     }
 
-    const { error: insertError } =
-      await supabase
-        .from('chat_messages')
-        .insert({
-          club_id: CLUB_ID,
-          sender_id: user.id,
-          message: null,
-          attachment_path: path,
-          attachment_type:
-            file.type || null,
-        })
+    const {
+      error: insertError,
+    } = await supabase
+      .from('chat_messages')
+      .insert({
+        club_id: CLUB_ID,
+        sender_id: user.id,
+        message: null,
+        attachment_path: path,
+        attachment_type:
+          file.type || null,
+      })
 
     if (insertError) {
       await supabase.storage
         .from('club-chat')
         .remove([path])
 
-      setError(friendlyError(insertError))
+      setError(
+        friendlyError(insertError)
+      )
       return
     }
 
@@ -415,38 +479,49 @@ export default function ClubChat() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(
+    id: string
+  ) {
     const message =
       messages?.find(
-        (item) => item.id === id
+        (item) =>
+          item.id === id
       )
 
-    const confirmed = window.confirm(
-      `Delete this message?\n\n${
-        message?.message
-          ? `"${message.message.slice(0, 100)}${
-              message.message.length > 100
-                ? '…'
-                : ''
-            }"`
-          : 'This message contains an attachment.'
-      }\n\nThis action cannot be undone.`
-    )
+    const confirmed =
+      window.confirm(
+        `Delete this message?\n\n${
+          message?.message
+            ? `"${message.message.slice(
+                0,
+                100
+              )}${
+                message.message.length >
+                100
+                  ? '…'
+                  : ''
+              }"`
+            : 'This message contains an attachment.'
+        }\n\nThis action cannot be undone.`
+      )
 
     if (!confirmed) {
       return
     }
 
-    const { error } = await supabase
-      .from('chat_messages')
-      .update({
-        deleted_at:
-          new Date().toISOString(),
-      })
-      .eq('id', id)
+    const { error } =
+      await supabase
+        .from('chat_messages')
+        .update({
+          deleted_at:
+            new Date().toISOString(),
+        })
+        .eq('id', id)
 
     if (error) {
-      setError(friendlyError(error))
+      setError(
+        friendlyError(error)
+      )
     }
   }
 
@@ -496,16 +571,20 @@ export default function ClubChat() {
               key={m.id}
               message={m.message}
               senderName={
-                m.profile?.display_name ??
+                m.profile
+                  ?.display_name ??
                 'Member'
               }
               avatarUrl={
                 m.profile?.avatar_url ??
                 null
               }
-              createdAt={m.created_at}
+              createdAt={
+                m.created_at
+              }
               isOwn={
-                m.sender_id === user?.id
+                m.sender_id ===
+                user?.id
               }
               edited={
                 m.updated_at !==
@@ -517,21 +596,29 @@ export default function ClubChat() {
                       (item) =>
                         item.id ===
                         m.reply_to
-                    )?.message ?? null
+                    )?.message ??
+                    null
                   : null
               }
               attachmentUrl={
-                m.attachmentUrl ?? null
+                m.attachmentUrl ??
+                null
               }
               attachmentType={
                 m.attachment_type
               }
               onEdit={() => {
-                setEditingId(m.id)
-                setText(m.message ?? '')
+                setEditingId(
+                  m.id
+                )
+                setText(
+                  m.message ?? ''
+                )
               }}
               onDelete={() =>
-                handleDelete(m.id)
+                handleDelete(
+                  m.id
+                )
               }
             />
           ))
@@ -561,10 +648,10 @@ export default function ClubChat() {
       ) : null}
 
       {/* Composer */}
-   <form
-  onSubmit={handleSend}
-  className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-2 border-t border-lavender/60 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-md sm:px-4 md:static md:z-auto md:shrink-0 dark:bg-[#1d1525]/95"
->
+      <form
+        onSubmit={handleSend}
+        className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-2 border-t border-lavender/60 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-md sm:px-4 md:static md:z-auto md:shrink-0 dark:bg-[#1d1525]/95"
+      >
         <button
           type="button"
           onClick={() =>
@@ -581,14 +668,18 @@ export default function ClubChat() {
           type="file"
           className="hidden"
           onChange={(e) =>
-            handleAttach(e.target.files)
+            handleAttach(
+              e.target.files
+            )
           }
         />
 
         <input
           value={text}
           onChange={(e) =>
-            setText(e.target.value)
+            setText(
+              e.target.value
+            )
           }
           onKeyDown={(e) => {
             if (
@@ -596,7 +687,7 @@ export default function ClubChat() {
               !e.shiftKey
             ) {
               e.preventDefault()
-              handleSend(e)
+              void handleSend(e)
             }
           }}
           placeholder={
