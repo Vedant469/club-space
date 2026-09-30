@@ -607,6 +607,11 @@ export default function ClubChat() {
               attachmentType={
                 m.attachment_type
               }
+              onReply={() => {
+  setReplyTo(m)
+  setEditingId(null)
+  setText('')
+}}
               onEdit={() => {
                 setEditingId(
                   m.id
