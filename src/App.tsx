@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import SplashScreen from './components/SplashScreen'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
@@ -33,30 +34,33 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <ClubProvider>
-              <AppShell />
-            </ClubProvider>
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Home />} />
-        <Route path="tasks" element={<MyTasks />} />
-        <Route path="club-tasks" element={<ClubTasks />} />
-        <Route path="documents" element={<Documents />} />
-        <Route path="memories" element={<Memories />} />
-        <Route path="memories/:eventId" element={<EventGallery />} />
-        <Route path="chat" element={<ClubChat />} />
-        <Route path="members" element={<Members />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
-    </Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <ClubProvider>
+                <AppShell />
+              </ClubProvider>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Home />} />
+          <Route path="tasks" element={<MyTasks />} />
+          <Route path="club-tasks" element={<ClubTasks />} />
+          <Route path="documents" element={<Documents />} />
+          <Route path="memories" element={<Memories />} />
+          <Route path="memories/:eventId" element={<EventGallery />} />
+          <Route path="chat" element={<ClubChat />} />
+          <Route path="members" element={<Members />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+      </Routes>
+      <Analytics />
+    </>
   )
 }
