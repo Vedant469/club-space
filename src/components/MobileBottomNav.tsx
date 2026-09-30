@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/club-tasks', glyph: '✦', label: 'Club' },
   { to: '/chat', glyph: '✧', label: 'Chat' },
   { to: '/members', glyph: '✦', label: 'Members' },
+  { to: '/profile', glyph: '✧', label: 'Profile' },
 ]
 
 export default function MobileBottomNav() {
