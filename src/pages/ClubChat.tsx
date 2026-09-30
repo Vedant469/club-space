@@ -451,7 +451,7 @@ export default function ClubChat() {
   }
 
   return (
-    <div className="flex h-[100dvh] min-h-0 flex-col md:h-screen">
+    <div className="flex h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] min-h-0 flex-col md:h-screen">
       {/* Chat header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-lavender/60 bg-white/70 px-5 py-4 dark:bg-[#1d1525]/90">
         <button
@@ -481,7 +481,7 @@ export default function ClubChat() {
       ) : null}
 
       {/* Messages */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-[calc(4.5rem+env(safe-area-inset-bottom)+2rem)] sm:px-5 md:py-4 md:pb-4 space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-4 sm:px-5 md:py-4 space-y-4">
         {messages === null ? (
           <LoadingSkeleton count={4} />
         ) : messages.length === 0 ? (
@@ -561,9 +561,9 @@ export default function ClubChat() {
       ) : null}
 
       {/* Composer */}
-     <form
+    <form
   onSubmit={handleSend}
-  className="fixed inset-x-0 bottom-[4.5rem] z-30 flex items-center gap-2 border-t border-lavender/60 bg-white/95 px-3 py-3 pb-[calc(4.5rem+env(safe-area-inset-bottom)+0.75rem)] shadow-sm backdrop-blur-md sm:px-4 md:static md:z-auto md:shrink-0 dark:bg-[#1d1525]/95"
+  className="flex shrink-0 items-center gap-2 border-t border-lavender/60 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-md sm:px-4 dark:bg-[#1d1525]/95"
 >
         <button
           type="button"
