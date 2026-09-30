@@ -1,10 +1,10 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import DesktopSidebar from './DesktopSidebar'
 import MobileBottomNav from './MobileBottomNav'
+import NotificationBell from './NotificationBell'
 
 export default function AppShell() {
   const location = useLocation()
-
   const isChat = location.pathname === '/chat'
 
   return (
@@ -17,6 +17,7 @@ export default function AppShell() {
             isChat ? '' : 'pb-24 md:pb-0'
           }`}
         >
+          <NotificationBell />
           <Outlet />
         </main>
 
