@@ -211,6 +211,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'Username must be 3–32 characters and use letters, numbers, dots, underscores or hyphens.',
         }
       }
+      const { data: usernameAvailable, error: usernameCheckError } =
+  await supabase.rpc('is_username_available', {
+    _username: cleanUsername,
+  })
+
+if (usernameCheckError) {
+  return {
+    error: 'We could not check that username right now.',
+  }
+}
+
+if (!usernameAvailable) {
+  return {
+    error:
+      'That username is already taken. Please choose another one.',
+  }
+}
 
       if (cleanDisplayName.length > 80) {
         return {
