@@ -5,6 +5,7 @@ import NotificationBell from './NotificationBell'
 
 export default function AppShell() {
   const location = useLocation()
+  const isHome = location.pathname === '/'
   const isChat = location.pathname === '/chat'
 
   return (
@@ -17,7 +18,7 @@ export default function AppShell() {
             isChat ? '' : 'pb-24 md:pb-0'
           }`}
         >
-          <NotificationBell />
+          {isHome ? <NotificationBell /> : null}
           <Outlet />
         </main>
 
